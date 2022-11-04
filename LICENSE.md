@@ -1,0 +1,1 @@
+This work is derivated from the nodes base, part of n8n code, for the licence please report to [https://github.com/n8n-io/n8n/blob/master/packages/cli/LICENSE.md](https://github.com/n8n-io/n8n/blob/master/packages/cli/LICENSE.md)
