@@ -176,14 +176,14 @@ class Aitable {
                     displayOptions: {
                         show: {
                             resource: ['datasheet'],
-                            operation: ['getAllRecords'],
+                            operation: ['getAllRecords', 'createRecords'],
                         },
                     },
                     description: 'The ID of the view',
                 },
                 {
-                    displayName: 'Fields',
-                    name: 'fields',
+                    displayName: 'Records',
+                    name: 'records',
                     type: 'fixedCollection',
                     typeOptions: {
                         multipleValues: true,
@@ -197,25 +197,29 @@ class Aitable {
                     default: {},
                     options: [
                         {
-                            displayName: 'Field',
-                            name: 'field',
+                            name: 'record',
+                            displayName: 'Record',
                             values: [
                                 {
-                                    displayName: 'Field Name',
-                                    name: 'fieldId',
-                                    type: 'options',
-                                    typeOptions: {
-                                        loadOptionsMethod: 'getFields',
-                                    },
-                                    default: '',
-                                    description: 'Choose the field to set',
-                                },
-                                {
-                                    displayName: 'Field Value',
-                                    name: 'fieldValue',
+                                    displayName: 'Title',
+                                    name: 'title',
                                     type: 'string',
                                     default: '',
-                                    description: 'Value to set for the field',
+                                    description: 'Title of the record',
+                                },
+                                {
+                                    displayName: 'Long Text',
+                                    name: 'longText',
+                                    type: 'string',
+                                    default: '',
+                                    description: 'Long text content',
+                                },
+                                {
+                                    displayName: 'Long Text 2',
+                                    name: 'longText2',
+                                    type: 'string',
+                                    default: '',
+                                    description: 'Additional long text content',
                                 },
                             ],
                         },
@@ -251,7 +255,7 @@ class Aitable {
                         }
                         return response.data.fields.map((field) => ({
                             name: field.name,
-                            value: field.id,
+                            value: field.name,
                             description: `Type: ${field.type}${field.isPrimary ? ' (Primary)' : ''}`,
                         }));
                     }
@@ -311,24 +315,27 @@ class Aitable {
                         const datasheetId = this.getNodeParameter('datasheetId', i);
                         switch (operation) {
                             case 'getAllRecords':
-                                const viewId = this.getNodeParameter('viewId', i);
-                                options.url = `https://aitable.ai/fusion/v1/datasheets/${datasheetId}/records?viewId=${viewId}`;
+                                const getAllViewId = this.getNodeParameter('viewId', i);
+                                options.url = `https://aitable.ai/fusion/v1/datasheets/${datasheetId}/records?viewId=${getAllViewId}`;
                                 break;
                             case 'getViews':
                                 options.url = `https://aitable.ai/fusion/v1/datasheets/${datasheetId}/views`;
                                 break;
                             case 'createRecords':
+                                const viewId = this.getNodeParameter('viewId', i);
                                 options.method = 'POST';
-                                options.url = `https://aitable.ai/fusion/v1/datasheets/${datasheetId}/records`;
-                                const fieldsData = this.getNodeParameter('fields.field', i, []);
-                                const fields = fieldsData.reduce((acc, field) => {
-                                    acc[field.fieldId] = field.fieldValue;
-                                    return acc;
-                                }, {});
+                                options.url = `https://aitable.ai/fusion/v1/datasheets/${datasheetId}/records?viewId=${viewId}&fieldKey=name`;
+                                const recordsData = this.getNodeParameter('records.record', i, []);
+                                const records = recordsData.map(record => ({
+                                    fields: {
+                                        "Title": record.title,
+                                        "Long text": record.longText,
+                                        "Long text 2": record.longText2
+                                    }
+                                }));
                                 options.body = {
-                                    records: [{
-                                            fields
-                                        }],
+                                    records,
+                                    fieldKey: "name"
                                 };
                                 break;
                             default:

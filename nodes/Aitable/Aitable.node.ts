@@ -204,14 +204,14 @@ export class Aitable implements INodeType {
                 displayOptions: {
                     show: {
                         resource: ['datasheet'],
-                        operation: ['getAllRecords'],
+                        operation: ['getAllRecords', 'createRecords'],
                     },
                 },
                 description: 'The ID of the view',
             },
             {
-                displayName: 'Fields',
-                name: 'fields',
+                displayName: 'Records',
+                name: 'records',
                 type: 'fixedCollection',
                 typeOptions: {
                     multipleValues: true,
@@ -225,25 +225,29 @@ export class Aitable implements INodeType {
                 default: {},
                 options: [
                     {
-                        displayName: 'Field',
-                        name: 'field',
+                        name: 'record',
+                        displayName: 'Record',
                         values: [
                             {
-                                displayName: 'Field Name',
-                                name: 'fieldId',
-                                type: 'options',
-                                typeOptions: {
-                                    loadOptionsMethod: 'getFields',
-                                },
-                                default: '',
-                                description: 'Choose the field to set',
-                            },
-                            {
-                                displayName: 'Field Value',
-                                name: 'fieldValue',
+                                displayName: 'Title',
+                                name: 'title',
                                 type: 'string',
                                 default: '',
-                                description: 'Value to set for the field',
+                                description: 'Title of the record',
+                            },
+                            {
+                                displayName: 'Long Text',
+                                name: 'longText',
+                                type: 'string',
+                                default: '',
+                                description: 'Long text content',
+                            },
+                            {
+                                displayName: 'Long Text 2',
+                                name: 'longText2',
+                                type: 'string',
+                                default: '',
+                                description: 'Additional long text content',
                             },
                         ],
                     },
@@ -285,7 +289,7 @@ export class Aitable implements INodeType {
 
                     return response.data.fields.map((field: Field) => ({
                         name: field.name,
-                        value: field.id,
+                        value: field.name,  // Changed to use name instead of id
                         description: `Type: ${field.type}${field.isPrimary ? ' (Primary)' : ''}`,
                     }));
 
@@ -351,30 +355,34 @@ export class Aitable implements INodeType {
                         const datasheetId = this.getNodeParameter('datasheetId', i) as string;
                         switch (operation) {
                             case 'getAllRecords':
-                                const viewId = this.getNodeParameter('viewId', i) as string;
-                                options.url = `https://aitable.ai/fusion/v1/datasheets/${datasheetId}/records?viewId=${viewId}`;
+                                const getAllViewId = this.getNodeParameter('viewId', i) as string;
+                                options.url = `https://aitable.ai/fusion/v1/datasheets/${datasheetId}/records?viewId=${getAllViewId}`;
                                 break;
                             case 'getViews':
                                 options.url = `https://aitable.ai/fusion/v1/datasheets/${datasheetId}/views`;
                                 break;
                             case 'createRecords':
+                                const viewId = this.getNodeParameter('viewId', i) as string;
                                 options.method = 'POST';
-                                options.url = `https://aitable.ai/fusion/v1/datasheets/${datasheetId}/records`;
+                                options.url = `https://aitable.ai/fusion/v1/datasheets/${datasheetId}/records?viewId=${viewId}&fieldKey=name`;
                                 
-                                const fieldsData = this.getNodeParameter('fields.field', i, []) as Array<{
-                                    fieldId: string;
-                                    fieldValue: string;
+                                const recordsData = this.getNodeParameter('records.record', i, []) as Array<{
+                                    title: string;
+                                    longText: string;
+                                    longText2: string;
                                 }>;
 
-                                const fields = fieldsData.reduce((acc, field) => {
-                                    acc[field.fieldId] = field.fieldValue;
-                                    return acc;
-                                }, {} as { [key: string]: string });
+                                const records = recordsData.map(record => ({
+                                    fields: {
+                                        "Title": record.title,
+                                        "Long text": record.longText,
+                                        "Long text 2": record.longText2
+                                    }
+                                }));
 
                                 options.body = {
-                                    records: [{
-                                        fields
-                                    }],
+                                    records,
+                                    fieldKey: "name"
                                 };
                                 break;
                             default:
