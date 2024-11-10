@@ -113,6 +113,11 @@ class Aitable {
                             value: 'getViews',
                             action: 'Get views of a datasheet',
                         },
+                        {
+                            name: 'Create Records',
+                            value: 'createRecords',
+                            action: 'Create records in a datasheet',
+                        },
                     ],
                     default: 'getAllRecords',
                 },
@@ -157,7 +162,7 @@ class Aitable {
                     displayOptions: {
                         show: {
                             resource: ['datasheet', 'field'],
-                            operation: ['getAllRecords', 'getViews', 'getFields'],
+                            operation: ['getAllRecords', 'getViews', 'getFields', 'createRecords'],
                         },
                     },
                     description: 'The ID of the datasheet',
@@ -176,10 +181,87 @@ class Aitable {
                     },
                     description: 'The ID of the view',
                 },
+                {
+                    displayName: 'Records',
+                    name: 'records',
+                    type: 'fixedCollection',
+                    typeOptions: {
+                        multipleValues: true,
+                    },
+                    displayOptions: {
+                        show: {
+                            resource: ['datasheet'],
+                            operation: ['createRecords'],
+                        },
+                    },
+                    default: {},
+                    options: [
+                        {
+                            name: 'recordsValues',
+                            displayName: 'Record',
+                            values: [
+                                {
+                                    displayName: 'Fields',
+                                    name: 'fields',
+                                    type: 'collection',
+                                    typeOptions: {
+                                        multipleValues: false,
+                                    },
+                                    default: {},
+                                    options: [
+                                        {
+                                            displayName: 'Field Names or IDs',
+                                            name: 'fieldNames',
+                                            type: 'multiOptions',
+                                            typeOptions: {
+                                                loadOptionsMethod: 'getFields',
+                                            },
+                                            default: [],
+                                            description: 'Choose from the list of fields in your datasheet',
+                                        },
+                                    ],
+                                },
+                            ],
+                        },
+                    ],
+                },
             ],
+        };
+        this.methods = {
+            loadOptions: {
+                async getFields() {
+                    var _a, _b;
+                    const datasheetId = this.getNodeParameter('datasheetId');
+                    const credentials = await this.getCredentials('aitableApi');
+                    if (!credentials) {
+                        throw new Error('No credentials provided!');
+                    }
+                    const options = {
+                        headers: {
+                            'Authorization': `Bearer ${credentials.apiToken}`,
+                            'Accept': 'application/json',
+                        },
+                        method: 'GET',
+                        url: `https://aitable.ai/fusion/v1/datasheets/${datasheetId}/fields`,
+                        json: true,
+                    };
+                    try {
+                        const response = await ((_b = (_a = this.helpers) === null || _a === void 0 ? void 0 : _a.request) === null || _b === void 0 ? void 0 : _b.call(_a, options));
+                        const fields = (response === null || response === void 0 ? void 0 : response.fields) || [];
+                        return fields.map((field) => ({
+                            name: field.name,
+                            value: field.id,
+                        }));
+                    }
+                    catch (error) {
+                        throw new Error(`Error loading fields: ${error}`);
+                    }
+                },
+            },
         };
     }
     async execute() {
+        var _a, _b;
         const items = this.getInputData();
         const returnData = [];
         const resource = this.getNodeParameter('resource', 0);
@@ -195,46 +277,77 @@ class Aitable {
                     headers: {
                         'Authorization': `Bearer ${credentials.apiToken}`,
                         'Accept': 'application/json',
+                        'Content-Type': 'application/json',
                     },
                     method: 'GET',
                     url: '',
                     json: true,
                 };
-                if (resource === 'space') {
-                    if (operation === 'getSpaces') {
-                        options.url = 'https://aitable.ai/fusion/v1/spaces';
-                    }
-                }
-                else if (resource === 'node') {
-                    const spaceId = this.getNodeParameter('spaceId', i);
-                    if (operation === 'getNodes') {
-                        options.url = `https://aitable.ai/fusion/v1/spaces/${spaceId}/nodes`;
-                    }
-                    else if (operation === 'searchNodes') {
-                        options.url = `https://aitable.ai/fusion/v2/spaces/${spaceId}/nodes?type=Datasheet&permissions=0,1`;
-                    }
-                }
-                else if (resource === 'datasheet') {
-                    const datasheetId = this.getNodeParameter('datasheetId', i);
-                    if (operation === 'getAllRecords') {
-                        const viewId = this.getNodeParameter('viewId', i);
-                        options.url = `https://aitable.ai/fusion/v1/datasheets/${datasheetId}/records?viewId=${viewId}`;
-                    }
-                    else if (operation === 'getViews') {
-                        options.url = `https://aitable.ai/fusion/v1/datasheets/${datasheetId}/views`;
-                    }
-                }
-                else if (resource === 'field') {
-                    const datasheetId = this.getNodeParameter('datasheetId', i);
-                    if (operation === 'getFields') {
-                        options.url = `https://aitable.ai/fusion/v1/datasheets/${datasheetId}/fields`;
-                    }
+                switch (resource) {
+                    case 'space':
+                        switch (operation) {
+                            case 'getSpaces':
+                                options.url = 'https://aitable.ai/fusion/v1/spaces';
+                                break;
+                            default:
+                                throw new n8n_workflow_1.NodeOperationError(this.getNode(), `The operation "${operation}" is not supported!`);
+                        }
+                        break;
+                    case 'node':
+                        const spaceId = this.getNodeParameter('spaceId', i);
+                        switch (operation) {
+                            case 'getNodes':
+                                options.url = `https://aitable.ai/fusion/v1/spaces/${spaceId}/nodes`;
+                                break;
+                            case 'searchNodes':
+                                options.url = `https://aitable.ai/fusion/v2/spaces/${spaceId}/nodes?type=Datasheet&permissions=0,1`;
+                                break;
+                            default:
+                                throw new n8n_workflow_1.NodeOperationError(this.getNode(), `The operation "${operation}" is not supported!`);
+                        }
+                        break;
+                    case 'datasheet':
+                        const datasheetId = this.getNodeParameter('datasheetId', i);
+                        switch (operation) {
+                            case 'getAllRecords':
+                                const viewId = this.getNodeParameter('viewId', i);
+                                options.url = `https://aitable.ai/fusion/v1/datasheets/${datasheetId}/records?viewId=${viewId}`;
+                                break;
+                            case 'getViews':
+                                options.url = `https://aitable.ai/fusion/v1/datasheets/${datasheetId}/views`;
+                                break;
+                            case 'createRecords':
+                                options.method = 'POST';
+                                options.url = `https://aitable.ai/fusion/v1/datasheets/${datasheetId}/records`;
+                                const records = this.getNodeParameter('records.recordsValues', i, []);
+                                options.body = {
+                                    records: records.map((record) => ({
+                                        fields: record.fields,
+                                    })),
+                                };
+                                break;
+                            default:
+                                throw new n8n_workflow_1.NodeOperationError(this.getNode(), `The operation "${operation}" is not supported!`);
+                        }
+                        break;
+                    case 'field':
+                        const fieldDatasheetId = this.getNodeParameter('datasheetId', i);
+                        switch (operation) {
+                            case 'getFields':
+                                options.url = `https://aitable.ai/fusion/v1/datasheets/${fieldDatasheetId}/fields`;
+                                break;
+                            default:
+                                throw new n8n_workflow_1.NodeOperationError(this.getNode(), `The operation "${operation}" is not supported!`);
+                        }
+                        break;
+                    default:
+                        throw new n8n_workflow_1.NodeOperationError(this.getNode(), `The resource "${resource}" is not supported!`);
                 }
                 if (!options.url) {
                     throw new n8n_workflow_1.NodeOperationError(this.getNode(), `The operation "${operation}" is not supported!`);
                 }
                 try {
-                    response = await this.helpers.request(options);
+                    response = await ((_b = (_a = this.helpers) === null || _a === void 0 ? void 0 : _a.request) === null || _b === void 0 ? void 0 : _b.call(_a, options));
                 }
                 catch (error) {
                     throw new n8n_workflow_1.NodeApiError(this.getNode(), error);
