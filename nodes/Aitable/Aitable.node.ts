@@ -10,6 +10,27 @@ import {
     IDataObject,
 } from 'n8n-workflow';
 
+interface Field {
+    id: string;
+    name: string;
+    type: string;
+    property: {
+        options?: Array<{ id: string; name: string; }>;
+        defaultValue?: string;
+    };
+    editable: boolean;
+    isPrimary?: boolean;
+}
+
+interface ApiResponse {
+    code: number;
+    success: boolean;
+    data: {
+        fields: Field[];
+    };
+    message: string;
+}
+
 export class Aitable implements INodeType {
     description: INodeTypeDescription = {
         displayName: 'Aitable',
@@ -189,8 +210,8 @@ export class Aitable implements INodeType {
                 description: 'The ID of the view',
             },
             {
-                displayName: 'Records',
-                name: 'records',
+                displayName: 'Fields',
+                name: 'fields',
                 type: 'fixedCollection',
                 typeOptions: {
                     multipleValues: true,
@@ -204,29 +225,25 @@ export class Aitable implements INodeType {
                 default: {},
                 options: [
                     {
-                        name: 'recordsValues',
-                        displayName: 'Record',
+                        displayName: 'Field',
+                        name: 'field',
                         values: [
                             {
-                                displayName: 'Fields',
-                                name: 'fields',
-                                type: 'collection',
+                                displayName: 'Field Name',
+                                name: 'fieldId',
+                                type: 'options',
                                 typeOptions: {
-                                    multipleValues: false,
+                                    loadOptionsMethod: 'getFields',
                                 },
-                                default: {},
-                                options: [
-                                    {
-                                        displayName: 'Field Names or IDs',
-                                        name: 'fieldNames',
-                                        type: 'multiOptions',
-                                        typeOptions: {
-                                            loadOptionsMethod: 'getFields',
-                                        },
-                                        default: [],
-                                        description: 'Choose from the list of fields in your datasheet',
-                                    },
-                                ],
+                                default: '',
+                                description: 'Choose the field to set',
+                            },
+                            {
+                                displayName: 'Field Value',
+                                name: 'fieldValue',
+                                type: 'string',
+                                default: '',
+                                description: 'Value to set for the field',
                             },
                         ],
                     },
@@ -238,33 +255,42 @@ export class Aitable implements INodeType {
     methods = {
         loadOptions: {
             async getFields(this: ILoadOptionsFunctions) {
-                const datasheetId = this.getNodeParameter('datasheetId') as string;
-                const credentials = await this.getCredentials('aitableApi');
-
-                if (!credentials) {
-                    throw new Error('No credentials provided!');
-                }
-
-                const options: IHttpRequestOptions = {
-                    headers: {
-                        'Authorization': `Bearer ${credentials.apiToken}`,
-                        'Accept': 'application/json',
-                    },
-                    method: 'GET',
-                    url: `https://aitable.ai/fusion/v1/datasheets/${datasheetId}/fields`,
-                    json: true,
-                };
-
                 try {
-                    const response = await this.helpers?.request?.(options);
-                    const fields = response?.fields || [];
+                    const credentials = await this.getCredentials('aitableApi');
+                    if (!credentials) {
+                        throw new Error('No credentials got returned!');
+                    }
 
-                    return fields.map((field: any) => ({
+                    const datasheetId = this.getNodeParameter('datasheetId') as string;
+
+                    const options: IHttpRequestOptions = {
+                        method: 'GET',
+                        url: `https://aitable.ai/fusion/v1/datasheets/${datasheetId}/fields`,
+                        headers: {
+                            'Authorization': `Bearer ${credentials.apiToken}`,
+                            'Accept': 'application/json',
+                        },
+                        json: true,
+                    };
+
+                    if (!this.helpers) {
+                        throw new Error('The request could not be completed because helpers are unavailable.');
+                    }
+
+                    const response = await this.helpers.httpRequest(options) as ApiResponse;
+
+                    if (!response?.success || !response?.data?.fields) {
+                        throw new Error('Failed to load fields from Aitable API');
+                    }
+
+                    return response.data.fields.map((field: Field) => ({
                         name: field.name,
                         value: field.id,
+                        description: `Type: ${field.type}${field.isPrimary ? ' (Primary)' : ''}`,
                     }));
+
                 } catch (error) {
-                    throw new Error(`Error loading fields: ${error}`);
+                    throw new Error(`Error loading fields: ${error.message}`);
                 }
             },
         },
@@ -334,11 +360,21 @@ export class Aitable implements INodeType {
                             case 'createRecords':
                                 options.method = 'POST';
                                 options.url = `https://aitable.ai/fusion/v1/datasheets/${datasheetId}/records`;
-                                const records = this.getNodeParameter('records.recordsValues', i, []) as IDataObject[];
+                                
+                                const fieldsData = this.getNodeParameter('fields.field', i, []) as Array<{
+                                    fieldId: string;
+                                    fieldValue: string;
+                                }>;
+
+                                const fields = fieldsData.reduce((acc, field) => {
+                                    acc[field.fieldId] = field.fieldValue;
+                                    return acc;
+                                }, {} as { [key: string]: string });
+
                                 options.body = {
-                                    records: records.map((record) => ({
-                                        fields: record.fields,
-                                    })),
+                                    records: [{
+                                        fields
+                                    }],
                                 };
                                 break;
                             default:
@@ -365,8 +401,12 @@ export class Aitable implements INodeType {
                     throw new NodeOperationError(this.getNode(), `The operation "${operation}" is not supported!`);
                 }
 
+                if (!this.helpers) {
+                    throw new NodeOperationError(this.getNode(), 'The request could not be completed because helpers are unavailable.');
+                }
+
                 try {
-                    response = await this.helpers?.request?.(options);
+                    response = await this.helpers.httpRequest(options);
                 } catch (error) {
                     throw new NodeApiError(this.getNode(), error);
                 }

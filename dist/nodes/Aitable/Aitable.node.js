@@ -182,8 +182,8 @@ class Aitable {
                     description: 'The ID of the view',
                 },
                 {
-                    displayName: 'Records',
-                    name: 'records',
+                    displayName: 'Fields',
+                    name: 'fields',
                     type: 'fixedCollection',
                     typeOptions: {
                         multipleValues: true,
@@ -197,29 +197,25 @@ class Aitable {
                     default: {},
                     options: [
                         {
-                            name: 'recordsValues',
-                            displayName: 'Record',
+                            displayName: 'Field',
+                            name: 'field',
                             values: [
                                 {
-                                    displayName: 'Fields',
-                                    name: 'fields',
-                                    type: 'collection',
+                                    displayName: 'Field Name',
+                                    name: 'fieldId',
+                                    type: 'options',
                                     typeOptions: {
-                                        multipleValues: false,
+                                        loadOptionsMethod: 'getFields',
                                     },
-                                    default: {},
-                                    options: [
-                                        {
-                                            displayName: 'Field Names or IDs',
-                                            name: 'fieldNames',
-                                            type: 'multiOptions',
-                                            typeOptions: {
-                                                loadOptionsMethod: 'getFields',
-                                            },
-                                            default: [],
-                                            description: 'Choose from the list of fields in your datasheet',
-                                        },
-                                    ],
+                                    default: '',
+                                    description: 'Choose the field to set',
+                                },
+                                {
+                                    displayName: 'Field Value',
+                                    name: 'fieldValue',
+                                    type: 'string',
+                                    default: '',
+                                    description: 'Value to set for the field',
                                 },
                             ],
                         },
@@ -230,38 +226,43 @@ class Aitable {
         this.methods = {
             loadOptions: {
                 async getFields() {
-                    var _a, _b;
-                    const datasheetId = this.getNodeParameter('datasheetId');
-                    const credentials = await this.getCredentials('aitableApi');
-                    if (!credentials) {
-                        throw new Error('No credentials provided!');
-                    }
-                    const options = {
-                        headers: {
-                            'Authorization': `Bearer ${credentials.apiToken}`,
-                            'Accept': 'application/json',
-                        },
-                        method: 'GET',
-                        url: `https://aitable.ai/fusion/v1/datasheets/${datasheetId}/fields`,
-                        json: true,
-                    };
+                    var _a;
                     try {
-                        const response = await ((_b = (_a = this.helpers) === null || _a === void 0 ? void 0 : _a.request) === null || _b === void 0 ? void 0 : _b.call(_a, options));
-                        const fields = (response === null || response === void 0 ? void 0 : response.fields) || [];
-                        return fields.map((field) => ({
+                        const credentials = await this.getCredentials('aitableApi');
+                        if (!credentials) {
+                            throw new Error('No credentials got returned!');
+                        }
+                        const datasheetId = this.getNodeParameter('datasheetId');
+                        const options = {
+                            method: 'GET',
+                            url: `https://aitable.ai/fusion/v1/datasheets/${datasheetId}/fields`,
+                            headers: {
+                                'Authorization': `Bearer ${credentials.apiToken}`,
+                                'Accept': 'application/json',
+                            },
+                            json: true,
+                        };
+                        if (!this.helpers) {
+                            throw new Error('The request could not be completed because helpers are unavailable.');
+                        }
+                        const response = await this.helpers.httpRequest(options);
+                        if (!(response === null || response === void 0 ? void 0 : response.success) || !((_a = response === null || response === void 0 ? void 0 : response.data) === null || _a === void 0 ? void 0 : _a.fields)) {
+                            throw new Error('Failed to load fields from Aitable API');
+                        }
+                        return response.data.fields.map((field) => ({
                             name: field.name,
                             value: field.id,
+                            description: `Type: ${field.type}${field.isPrimary ? ' (Primary)' : ''}`,
                         }));
                     }
                     catch (error) {
-                        throw new Error(`Error loading fields: ${error}`);
+                        throw new Error(`Error loading fields: ${error.message}`);
                     }
                 },
             },
         };
     }
     async execute() {
-        var _a, _b;
         const items = this.getInputData();
         const returnData = [];
         const resource = this.getNodeParameter('resource', 0);
@@ -319,11 +320,15 @@ class Aitable {
                             case 'createRecords':
                                 options.method = 'POST';
                                 options.url = `https://aitable.ai/fusion/v1/datasheets/${datasheetId}/records`;
-                                const records = this.getNodeParameter('records.recordsValues', i, []);
+                                const fieldsData = this.getNodeParameter('fields.field', i, []);
+                                const fields = fieldsData.reduce((acc, field) => {
+                                    acc[field.fieldId] = field.fieldValue;
+                                    return acc;
+                                }, {});
                                 options.body = {
-                                    records: records.map((record) => ({
-                                        fields: record.fields,
-                                    })),
+                                    records: [{
+                                            fields
+                                        }],
                                 };
                                 break;
                             default:
@@ -346,8 +351,11 @@ class Aitable {
                 if (!options.url) {
                     throw new n8n_workflow_1.NodeOperationError(this.getNode(), `The operation "${operation}" is not supported!`);
                 }
+                if (!this.helpers) {
+                    throw new n8n_workflow_1.NodeOperationError(this.getNode(), 'The request could not be completed because helpers are unavailable.');
+                }
                 try {
-                    response = await ((_b = (_a = this.helpers) === null || _a === void 0 ? void 0 : _a.request) === null || _b === void 0 ? void 0 : _b.call(_a, options));
+                    response = await this.helpers.httpRequest(options);
                 }
                 catch (error) {
                     throw new n8n_workflow_1.NodeApiError(this.getNode(), error);
