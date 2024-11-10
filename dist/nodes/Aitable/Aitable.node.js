@@ -42,6 +42,10 @@ class Aitable {
                             name: 'Datasheet',
                             value: 'datasheet',
                         },
+                        {
+                            name: 'Field',
+                            value: 'field',
+                        },
                     ],
                     default: 'space',
                 },
@@ -113,6 +117,25 @@ class Aitable {
                     default: 'getAllRecords',
                 },
                 {
+                    displayName: 'Operation',
+                    name: 'operation',
+                    type: 'options',
+                    noDataExpression: true,
+                    displayOptions: {
+                        show: {
+                            resource: ['field'],
+                        },
+                    },
+                    options: [
+                        {
+                            name: 'Get Fields',
+                            value: 'getFields',
+                            action: 'Get fields of a datasheet',
+                        },
+                    ],
+                    default: 'getFields',
+                },
+                {
                     displayName: 'Space ID',
                     name: 'spaceId',
                     type: 'string',
@@ -133,8 +156,8 @@ class Aitable {
                     required: true,
                     displayOptions: {
                         show: {
-                            resource: ['datasheet'],
-                            operation: ['getAllRecords', 'getViews'],
+                            resource: ['datasheet', 'field'],
+                            operation: ['getAllRecords', 'getViews', 'getFields'],
                         },
                     },
                     description: 'The ID of the datasheet',
@@ -199,6 +222,12 @@ class Aitable {
                     }
                     else if (operation === 'getViews') {
                         options.url = `https://aitable.ai/fusion/v1/datasheets/${datasheetId}/views`;
+                    }
+                }
+                else if (resource === 'field') {
+                    const datasheetId = this.getNodeParameter('datasheetId', i);
+                    if (operation === 'getFields') {
+                        options.url = `https://aitable.ai/fusion/v1/datasheets/${datasheetId}/fields`;
                     }
                 }
                 if (!options.url) {
