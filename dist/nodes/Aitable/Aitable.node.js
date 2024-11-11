@@ -11,7 +11,7 @@ class Aitable {
             group: ['transform'],
             version: 1,
             subtitle: '={{$parameter["operation"] + ": " + $parameter["resource"]}}',
-            description: 'Interact with Aitable API',
+            description: 'Consume Aitable API',
             defaults: {
                 name: 'Aitable',
             },
@@ -61,9 +61,10 @@ class Aitable {
                     },
                     options: [
                         {
-                            name: 'Get List of Spaces',
+                            name: 'Get Spaces',
                             value: 'getSpaces',
-                            action: 'Get list of spaces',
+                            description: 'Get all spaces',
+                            action: 'Get all spaces',
                         },
                     ],
                     default: 'getSpaces',
@@ -80,13 +81,15 @@ class Aitable {
                     },
                     options: [
                         {
-                            name: 'Get Node List',
+                            name: 'Get Nodes',
                             value: 'getNodes',
-                            action: 'Get node list',
+                            description: 'Get all nodes',
+                            action: 'Get all nodes',
                         },
                         {
                             name: 'Search Nodes',
                             value: 'searchNodes',
+                            description: 'Search nodes',
                             action: 'Search nodes',
                         },
                     ],
@@ -106,17 +109,20 @@ class Aitable {
                         {
                             name: 'Get All Records',
                             value: 'getAllRecords',
-                            action: 'Get all records from a datasheet',
+                            description: 'Get all records',
+                            action: 'Get all records',
                         },
                         {
                             name: 'Get Views',
                             value: 'getViews',
-                            action: 'Get views of a datasheet',
+                            description: 'Get views',
+                            action: 'Get views',
                         },
                         {
                             name: 'Create Records',
                             value: 'createRecords',
-                            action: 'Create records in a datasheet',
+                            description: 'Create records',
+                            action: 'Create records',
                         },
                     ],
                     default: 'getAllRecords',
@@ -135,7 +141,8 @@ class Aitable {
                         {
                             name: 'Get Fields',
                             value: 'getFields',
-                            action: 'Get fields of a datasheet',
+                            description: 'Get fields',
+                            action: 'Get fields',
                         },
                     ],
                     default: 'getFields',
@@ -273,7 +280,6 @@ class Aitable {
         const operation = this.getNodeParameter('operation', 0);
         for (let i = 0; i < items.length; i++) {
             try {
-                let response;
                 const credentials = await this.getCredentials('aitableApi');
                 if (!credentials) {
                     throw new n8n_workflow_1.NodeOperationError(this.getNode(), 'No credentials got returned!');
@@ -362,16 +368,24 @@ class Aitable {
                     throw new n8n_workflow_1.NodeOperationError(this.getNode(), 'The request could not be completed because helpers are unavailable.');
                 }
                 try {
-                    response = await this.helpers.httpRequest(options);
+                    const response = await this.helpers.httpRequest(options);
+                    returnData.push({
+                        json: {
+                            ...response,
+                        },
+                    });
                 }
                 catch (error) {
                     throw new n8n_workflow_1.NodeApiError(this.getNode(), error);
                 }
-                returnData.push({ json: response });
             }
             catch (error) {
                 if (this.continueOnFail()) {
-                    returnData.push({ json: { error: error.message } });
+                    returnData.push({
+                        json: {
+                            error: error.message
+                        }
+                    });
                     continue;
                 }
                 throw error;
