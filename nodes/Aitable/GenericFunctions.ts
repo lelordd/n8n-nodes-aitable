@@ -1,64 +1,85 @@
-import { OptionsWithUri } from 'request';
 import {
   IExecuteFunctions,
   IHookFunctions,
   ILoadOptionsFunctions,
-} from 'n8n-core';
-import { IAitableSpace, IAitableView, IAitableNode } from './types';
+  IDataObject,
+  IHttpRequestOptions,
+  IHttpRequestMethods,
+} from 'n8n-workflow';
 
 export async function aitableApiRequest(
   this: IHookFunctions | IExecuteFunctions | ILoadOptionsFunctions,
-  method: string,
-  resource: string,
-  body: any = {},
+  method: IHttpRequestMethods,
+  endpoint: string,
+  body: IDataObject = {},
   qs: IDataObject = {},
-  uri?: string,
-  option: IDataObject = {}
-): Promise<any> {
+  apiVersion: string = 'v1',
+) {
   const credentials = await this.getCredentials('aitableApi');
-  const options: OptionsWithUri = {
-    headers: {
-      'Authorization': `Bearer ${credentials.apiToken}`,
-    },
+
+  if (!credentials?.apiToken) {
+    throw new Error('No API token provided');
+  }
+
+  const options: IHttpRequestOptions = {
     method,
-    qs,
     body,
-    uri: uri || `https://aitable.ai/fusion/v1${resource}`,
+    qs,
+    url: `https://aitable.ai/fusion/${apiVersion}${endpoint}`,
+    headers: {
+      Authorization: `Bearer ${credentials.apiToken}`,
+      'Content-Type': 'application/json',
+    },
     json: true,
   };
 
+  if (!Object.keys(body).length) {
+    delete options.body;
+  }
+
+  if (!Object.keys(qs).length) {
+    delete options.qs;
+  }
+
   try {
-    return await this.helpers.request!(options);
-  } catch (error) {
-    throw new Error(`Aitable error: ${error}`);
+    const response = await this.helpers.request!(options);
+
+    if (!response.success) {
+      throw new Error(`Aitable API Error: ${response.message}`);
+    }
+
+    return response;
+  } catch (error: any) {
+    throw new Error(
+      `Aitable Error: ${error.message || 'Unknown error occurred'}`,
+    );
   }
 }
 
-export async function getSpaces(
-  this: IExecuteFunctions
-): Promise<IAitableSpace[]> {
-  const response = await aitableApiRequest.call(this, 'GET', '/spaces');
-  return response.data.spaces;
-}
+export async function aitableApiRequestAllItems(
+  this: IExecuteFunctions | ILoadOptionsFunctions,
+  propertyName: string,
+  method: IHttpRequestMethods,
+  endpoint: string,
+  body: IDataObject = {},
+  query: IDataObject = {},
+): Promise<any> {
+  const returnData: IDataObject[] = [];
 
-export async function getViews(
-  this: IExecuteFunctions,
-  datasheetId: string
-): Promise<IAitableView[]> {
-  const response = await aitableApiRequest.call(this, 'GET', `/datasheets/${datasheetId}/views`);
-  return response.data.views;
-}
+  let responseData;
+  query.pageNum = 1;
+  query.pageSize = 100;
 
-export async function searchNodes(
-  this: IExecuteFunctions,
-  spaceId: string,
-  type: string,
-  permissions: number[]
-): Promise<IAitableNode[]> {
-  const qs = {
-    type,
-    permissions: permissions.join(','),
-  };
-  const response = await aitableApiRequest.call(this, 'GET', `/spaces/${spaceId}/nodes`, {}, qs);
-  return response.data.nodes;
+  do {
+    responseData = await aitableApiRequest.call(this, method, endpoint, body, query);
+    if (!responseData.data || !responseData.data[propertyName]) {
+      throw new Error(`No data returned for ${propertyName}`);
+    }
+    returnData.push(...responseData.data[propertyName]);
+    query.pageNum++;
+  } while (
+    responseData.data.pageNum * responseData.data.pageSize < responseData.data.total
+  );
+
+  return returnData;
 }
