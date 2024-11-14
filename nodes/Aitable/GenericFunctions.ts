@@ -50,9 +50,7 @@ export async function aitableApiRequest(
 
     return response;
   } catch (error: any) {
-    throw new Error(
-      `Aitable Error: ${error.message || 'Unknown error occurred'}`,
-    );
+    throw new Error(`Aitable Error: ${error.message || 'Unknown error occurred'}`);
   }
 }
 

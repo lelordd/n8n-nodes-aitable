@@ -6,6 +6,7 @@ import {
   INodeTypeDescription,
   INodePropertyOptions,
   IDataObject,
+  IHttpRequestMethods,
 } from 'n8n-workflow';
 
 import { aitableApiRequest, aitableApiRequestAllItems } from './GenericFunctions';
@@ -31,6 +32,7 @@ export class Aitable implements INodeType {
       },
     ],
     properties: [
+      // Resource Selection
       {
         displayName: 'Resource',
         name: 'resource',
@@ -44,6 +46,8 @@ export class Aitable implements INodeType {
         ],
         default: 'record',
       },
+
+      // Operation Selection
       {
         displayName: 'Operation',
         name: 'operation',
@@ -56,50 +60,118 @@ export class Aitable implements INodeType {
         },
         options: [
           {
+            name: 'Create',
+            value: 'create',
+            description: 'Create a record',
+            action: 'Create a record',
+          },
+          {
+            name: 'Update',
+            value: 'update',
+            description: 'Update a record',
+            action: 'Update a record',
+          },
+          {
+            name: 'Delete',
+            value: 'delete',
+            description: 'Delete a record',
+            action: 'Delete a record',
+          },
+          {
+            name: 'Get',
+            value: 'get',
+            description: 'Get a record',
+            action: 'Get a record',
+          },
+          {
             name: 'Get All',
             value: 'getAll',
             description: 'Get all records',
             action: 'Get all records',
           },
-          // ... other operations
         ],
         default: 'getAll',
       },
-      {
-        displayName: 'Space',
-        name: 'spaceId',
-        type: 'options',
-        typeOptions: {
-          loadOptionsMethod: 'getSpaces',
-        },
-        required: true,
-        default: '',
-        description: 'Space containing the datasheet',
-        displayOptions: {
-          show: {
-            operation: ['getAll'],
-            resource: ['record'],
-          },
-        },
-      },
+
+      // Common Parameters for All Operations
       {
         displayName: 'Datasheet',
         name: 'datasheetId',
         type: 'options',
         typeOptions: {
           loadOptionsMethod: 'getDatasheets',
-          loadOptionsDependsOn: ['spaceId'],
         },
         required: true,
         default: '',
         description: 'Datasheet to operate on',
         displayOptions: {
           show: {
-            operation: ['getAll'],
             resource: ['record'],
           },
         },
       },
+
+      // Parameters for 'Create' and 'Update' Operations
+      {
+        displayName: 'Fields',
+        name: 'fieldsUi',
+        type: 'fixedCollection',
+        typeOptions: {
+          multipleValues: true,
+        },
+        placeholder: 'Add Field',
+        default: {},
+        displayOptions: {
+          show: {
+            operation: ['create', 'update'],
+            resource: ['record'],
+          },
+        },
+        options: [
+          {
+            name: 'fieldValues',
+            displayName: 'Field',
+            values: [
+              {
+                displayName: 'Field',
+                name: 'field',
+                type: 'options',
+                typeOptions: {
+                  loadOptionsMethod: 'getFields',
+                  loadOptionsDependsOn: ['datasheetId'],
+                },
+                default: '',
+                description: 'Field to set',
+              },
+              {
+                displayName: 'Value',
+                name: 'value',
+                type: 'string',
+                default: '',
+                description: 'Value to set',
+              },
+            ],
+          },
+        ],
+      },
+
+      // Parameter for 'Update' and 'Delete' Operations
+      {
+        displayName: 'Record ID',
+        name: 'recordId',
+        type: 'string',
+        default: '',
+        required: true,
+        description: 'ID of the record',
+        displayOptions: {
+          show: {
+            operation: ['update', 'delete', 'get'],
+            resource: ['record'],
+          },
+        },
+      },
+
+      // Parameters for 'Get All' Operation
       {
         displayName: 'View',
         name: 'viewId',
@@ -123,7 +195,7 @@ export class Aitable implements INodeType {
         name: 'returnAll',
         type: 'boolean',
         default: false,
-        description: 'Whether to return all results or only up to a given limit',
+        description: 'Whether to return all results',
         displayOptions: {
           show: {
             resource: ['record'],
@@ -139,7 +211,7 @@ export class Aitable implements INodeType {
         description: 'Max number of results to return',
         typeOptions: {
           minValue: 1,
-          maxValue: 100,
+          maxValue: 1000,
         },
         displayOptions: {
           show: {
@@ -149,54 +221,53 @@ export class Aitable implements INodeType {
           },
         },
       },
-      // ... other properties
     ],
   };
 
   methods = {
     loadOptions: {
-      async getSpaces(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+      // Load Datasheets
+      async getDatasheets(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
         try {
           const response = await aitableApiRequest.call(this, 'GET', '/spaces');
           if (!response.success || !response.data?.spaces) {
-            throw new Error('Failed to load spaces or invalid response format');
+            throw new Error('Failed to load spaces');
           }
-          return response.data.spaces.map((space: { id: string; name: string }) => ({
-            name: space.name,
-            value: space.id,
-          }));
-        } catch (error: any) {
-          throw new Error(`Error loading spaces: ${error.message}`);
-        }
-      },
 
-      async getDatasheets(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
-        try {
-          const spaceId = this.getNodeParameter('spaceId', undefined) as string;
-          const qs: IDataObject = {
-            type: 'Datasheet',
-            permissions: '0,1',
-          };
-          const response = await aitableApiRequest.call(
-            this,
-            'GET',
-            `/spaces/${spaceId}/nodes`,
-            {},
-            qs,
-            'v2',
-          );
-          if (!response.success || !response.data?.nodes) {
-            throw new Error('Failed to load datasheets or invalid response format');
+          // Collect all datasheets from all spaces
+          const datasheetOptions: INodePropertyOptions[] = [];
+
+          for (const space of response.data.spaces) {
+            const qs: IDataObject = {
+              type: 'Datasheet',
+              permissions: '0,1',
+            };
+            const datasheetsResponse = await aitableApiRequest.call(
+              this,
+              'GET',
+              `/spaces/${space.id}/nodes`,
+              {},
+              qs,
+              'v2',
+            );
+
+            if (datasheetsResponse.success && datasheetsResponse.data?.nodes) {
+              for (const node of datasheetsResponse.data.nodes) {
+                datasheetOptions.push({
+                  name: `${node.name} (Space: ${space.name})`,
+                  value: node.id,
+                });
+              }
+            }
           }
-          return response.data.nodes.map((node: { id: string; name: string }) => ({
-            name: node.name,
-            value: node.id,
-          }));
+
+          return datasheetOptions;
         } catch (error: any) {
           throw new Error(`Error loading datasheets: ${error.message}`);
         }
       },
 
+      // Load Views
       async getViews(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
         try {
           const datasheetId = this.getNodeParameter('datasheetId', undefined) as string;
@@ -204,19 +275,41 @@ export class Aitable implements INodeType {
             this,
             'GET',
             `/datasheets/${datasheetId}/views`,
-            {},
-            {},
-            'v1',
           );
+
           if (!response.success || !response.data?.views) {
-            throw new Error('Failed to load views or invalid response format');
+            throw new Error('Failed to load views');
           }
+
           return response.data.views.map((view: { id: string; name: string }) => ({
             name: view.name,
             value: view.id,
           }));
         } catch (error: any) {
           throw new Error(`Error loading views: ${error.message}`);
+        }
+      },
+
+      // Load Fields
+      async getFields(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+        try {
+          const datasheetId = this.getNodeParameter('datasheetId', undefined) as string;
+          const response = await aitableApiRequest.call(
+            this,
+            'GET',
+            `/datasheets/${datasheetId}/fields`,
+          );
+
+          if (!response.success || !response.data?.fields) {
+            throw new Error('Failed to load fields');
+          }
+
+          return response.data.fields.map((field: { id: string; name: string }) => ({
+            name: field.name,
+            value: field.id,
+          }));
+        } catch (error: any) {
+          throw new Error(`Error loading fields: ${error.message}`);
         }
       },
     },
@@ -231,19 +324,120 @@ export class Aitable implements INodeType {
     for (let i = 0; i < items.length; i++) {
       try {
         if (resource === 'record') {
-          if (operation === 'getAll') {
+          if (operation === 'create') {
+            // 'Create' Operation
+            const datasheetId = this.getNodeParameter('datasheetId', i) as string;
+            const fieldsUi = this.getNodeParameter('fieldsUi', i) as IDataObject;
+            const fieldValues = (fieldsUi as IDataObject).fieldValues as IDataObject[];
+
+            const fields: IDataObject = {};
+            for (const fieldValue of fieldValues) {
+              fields[fieldValue.field as string] = fieldValue.value;
+            }
+
+            const body = {
+              records: [{ fields }],
+            };
+
+            const response = await aitableApiRequest.call(
+              this,
+              'POST',
+              `/datasheets/${datasheetId}/records`,
+              body,
+            );
+
+            returnData.push(
+              ...this.helpers.constructExecutionMetaData(
+                this.helpers.returnJsonArray(response.data.records),
+                { itemData: { item: i } },
+              ),
+            );
+          } else if (operation === 'update') {
+            // 'Update' Operation
+            const datasheetId = this.getNodeParameter('datasheetId', i) as string;
+            const recordId = this.getNodeParameter('recordId', i) as string;
+            const fieldsUi = this.getNodeParameter('fieldsUi', i) as IDataObject;
+            const fieldValues = (fieldsUi as IDataObject).fieldValues as IDataObject[];
+
+            const fields: IDataObject = {};
+            for (const fieldValue of fieldValues) {
+              fields[fieldValue.field as string] = fieldValue.value;
+            }
+
+            const body = {
+              records: [
+                {
+                  id: recordId,
+                  fields,
+                },
+              ],
+            };
+
+            const response = await aitableApiRequest.call(
+              this,
+              'PUT',
+              `/datasheets/${datasheetId}/records`,
+              body,
+            );
+
+            returnData.push(
+              ...this.helpers.constructExecutionMetaData(
+                this.helpers.returnJsonArray(response.data.records),
+                { itemData: { item: i } },
+              ),
+            );
+          } else if (operation === 'delete') {
+            // 'Delete' Operation
+            const datasheetId = this.getNodeParameter('datasheetId', i) as string;
+            const recordId = this.getNodeParameter('recordId', i) as string;
+
+            const qs = {
+              recordIds: recordId,
+            };
+
+            const response = await aitableApiRequest.call(
+              this,
+              'DELETE',
+              `/datasheets/${datasheetId}/records`,
+              {},
+              qs,
+            );
+
+            returnData.push(
+              ...this.helpers.constructExecutionMetaData(
+                this.helpers.returnJsonArray({ success: response.success }),
+                { itemData: { item: i } },
+              ),
+            );
+          } else if (operation === 'get') {
+            // 'Get' Operation
+            const datasheetId = this.getNodeParameter('datasheetId', i) as string;
+            const recordId = this.getNodeParameter('recordId', i) as string;
+
+            const response = await aitableApiRequest.call(
+              this,
+              'GET',
+              `/datasheets/${datasheetId}/records/${recordId}`,
+            );
+
+            returnData.push(
+              ...this.helpers.constructExecutionMetaData(
+                this.helpers.returnJsonArray(response.data),
+                { itemData: { item: i } },
+              ),
+            );
+          } else if (operation === 'getAll') {
+            // 'Get All' Operation
             const datasheetId = this.getNodeParameter('datasheetId', i) as string;
             const viewId = this.getNodeParameter('viewId', i) as string;
             const returnAll = this.getNodeParameter('returnAll', i) as boolean;
-            const filters = this.getNodeParameter('filters', i, {}) as IDataObject;
 
             const qs: IDataObject = {
               viewId,
-              ...filters,
             };
 
-            if (returnAll === true) {
-              const response = await aitableApiRequestAllItems.call(
+            if (returnAll) {
+              const records = await aitableApiRequestAllItems.call(
                 this,
                 'records',
                 'GET',
@@ -251,15 +445,17 @@ export class Aitable implements INodeType {
                 {},
                 qs,
               );
+
               returnData.push(
                 ...this.helpers.constructExecutionMetaData(
-                  this.helpers.returnJsonArray(response),
+                  this.helpers.returnJsonArray(records),
                   { itemData: { item: i } },
                 ),
               );
             } else {
               const limit = this.getNodeParameter('limit', i) as number;
               qs.pageSize = limit;
+
               const response = await aitableApiRequest.call(
                 this,
                 'GET',
@@ -267,6 +463,7 @@ export class Aitable implements INodeType {
                 {},
                 qs,
               );
+
               returnData.push(
                 ...this.helpers.constructExecutionMetaData(
                   this.helpers.returnJsonArray(response.data.records),
@@ -275,7 +472,6 @@ export class Aitable implements INodeType {
               );
             }
           }
-          // ... other operations
         }
       } catch (error: any) {
         if (this.continueOnFail()) {
