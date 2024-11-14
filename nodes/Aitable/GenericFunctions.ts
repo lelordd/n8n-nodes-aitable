@@ -7,6 +7,28 @@ import {
   IHttpRequestMethods,
 } from 'n8n-workflow';
 
+export interface IAitableApiResponse {
+  success: boolean;
+  message?: string;
+  data?: {
+    [key: string]: any;
+    spaces?: Array<{
+      id: string;
+      name: string;
+    }>;
+    nodes?: Array<{
+      id: string;
+      name: string;
+    }>;
+    fields?: Array<{
+      id: string;
+      name: string;
+    }>;
+    records?: Array<any>;
+    // Add other properties as needed
+  };
+}
+
 export async function aitableApiRequest(
   this: IHookFunctions | IExecuteFunctions | ILoadOptionsFunctions,
   method: IHttpRequestMethods,
@@ -14,7 +36,7 @@ export async function aitableApiRequest(
   body: IDataObject = {},
   qs: IDataObject = {},
   apiVersion: string = 'v1',
-) {
+): Promise<IAitableApiResponse> {
   const credentials = await this.getCredentials('aitableApi');
 
   if (!credentials?.apiToken) {
@@ -33,6 +55,7 @@ export async function aitableApiRequest(
     json: true,
   };
 
+  // Remove empty body or qs
   if (!Object.keys(body).length) {
     delete options.body;
   }
@@ -42,7 +65,7 @@ export async function aitableApiRequest(
   }
 
   try {
-    const response = await this.helpers.request!(options);
+    const response = (await this.helpers.httpRequest!(options)) as IAitableApiResponse;
 
     if (!response.success) {
       throw new Error(`Aitable API Error: ${response.message}`);
@@ -54,30 +77,3 @@ export async function aitableApiRequest(
   }
 }
 
-export async function aitableApiRequestAllItems(
-  this: IExecuteFunctions | ILoadOptionsFunctions,
-  propertyName: string,
-  method: IHttpRequestMethods,
-  endpoint: string,
-  body: IDataObject = {},
-  query: IDataObject = {},
-): Promise<any> {
-  const returnData: IDataObject[] = [];
-
-  let responseData;
-  query.pageNum = 1;
-  query.pageSize = 100;
-
-  do {
-    responseData = await aitableApiRequest.call(this, method, endpoint, body, query);
-    if (!responseData.data || !responseData.data[propertyName]) {
-      throw new Error(`No data returned for ${propertyName}`);
-    }
-    returnData.push(...responseData.data[propertyName]);
-    query.pageNum++;
-  } while (
-    responseData.data.pageNum * responseData.data.pageSize < responseData.data.total
-  );
-
-  return returnData;
-}
