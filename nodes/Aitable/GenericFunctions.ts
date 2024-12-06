@@ -35,7 +35,7 @@ export async function aitableApiRequest(
   endpoint: string,
   body: IDataObject = {},
   qs: IDataObject = {},
-  apiVersion: string = 'v1',
+  apiVersion = 'v1',
 ): Promise<IAitableApiResponse> {
   const credentials = await this.getCredentials('aitableApi');
 
@@ -76,4 +76,3 @@ export async function aitableApiRequest(
     throw new Error(`Aitable Error: ${error.message || 'Unknown error occurred'}`);
   }
 }
-

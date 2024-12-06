@@ -28,4 +28,4 @@ cd ~/.n8n/custom || { echo "Không thể vào thư mục ~/.n8n/custom"; exit 1;
 npm link n8n-nodes-aitable
 
 # Khởi động n8n
-n8n start
+# n8n start
