@@ -14,7 +14,7 @@ export class Aitable implements INodeType {
   description: INodeTypeDescription = {
     displayName: 'Aitable',
     name: 'aitable',
-    icon: 'file:aitable.svg',
+    icon: 'file:aitable-newlogo.png',
     group: ['transform'],
     version: 1,
     description: 'Interact with the Aitable API',
