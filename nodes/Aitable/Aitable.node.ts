@@ -210,7 +210,7 @@ export class Aitable implements INodeType {
       async getDatasheets(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
         const response = await this.helpers.request!({
           method: 'GET',
-          url: 'https://aitable.ai/fusion/v1/spaces',
+          url: 'https://tbl.automatiser.com/fusion/v1/spaces',
           headers: {
             Authorization: `Bearer ${(await this.getCredentials('aitableApi')).apiToken}`,
           },
@@ -223,7 +223,7 @@ export class Aitable implements INodeType {
           for (const space of response.data.spaces) {
             const datasheetsResponse = await this.helpers.request!({
               method: 'GET',
-              url: `https://aitable.ai/fusion/v2/spaces/${space.id}/nodes`,
+              url: `https://tbl.automatiser.com/fusion/v2/spaces/${space.id}/nodes`,
               qs: { type: 'Datasheet' },
               headers: {
                 Authorization: `Bearer ${(await this.getCredentials('aitableApi')).apiToken}`,
@@ -250,7 +250,7 @@ export class Aitable implements INodeType {
 
         const response = await this.helpers.request!({
           method: 'GET',
-          url: `https://aitable.ai/fusion/v1/datasheets/${datasheetId}/fields`,
+          url: `https://tbl.automatiser.com/fusion/v1/datasheets/${datasheetId}/fields`,
           headers: {
             Authorization: `Bearer ${(await this.getCredentials('aitableApi')).apiToken}`,
           },
@@ -315,7 +315,7 @@ export class Aitable implements INodeType {
 
             const response = await this.helpers.request!({
               method: 'POST',
-              url: `https://aitable.ai/fusion/v1/datasheets/${datasheetId}/records`,
+              url: `https://tbl.automatiser.com/fusion/v1/datasheets/${datasheetId}/records`,
               body,
               headers: requestOptions.headers,
               json: true,
@@ -349,7 +349,7 @@ export class Aitable implements INodeType {
 
             const response = await this.helpers.request!({
               method: 'PUT',
-              url: `https://aitable.ai/fusion/v1/datasheets/${datasheetId}/records`,
+              url: `https://tbl.automatiser.com/fusion/v1/datasheets/${datasheetId}/records`,
               body,
               headers: requestOptions.headers,
               json: true,
@@ -370,7 +370,7 @@ export class Aitable implements INodeType {
 
             const response = await this.helpers.request!({
               method: 'DELETE',
-              url: `https://aitable.ai/fusion/v1/datasheets/${datasheetId}/records`,
+              url: `https://tbl.automatiser.com/fusion/v1/datasheets/${datasheetId}/records`,
               qs,
               headers: requestOptions.headers,
               json: true,
@@ -391,7 +391,7 @@ export class Aitable implements INodeType {
 
             const response = await this.helpers.request!({
               method: 'GET',
-              url: `https://aitable.ai/fusion/v1/datasheets/${datasheetId}/records`,
+              url: `https://tbl.automatiser.com/fusion/v1/datasheets/${datasheetId}/records`,
               qs,
               headers: requestOptions.headers,
               json: true,
@@ -425,7 +425,7 @@ export class Aitable implements INodeType {
 
                 const response = await this.helpers.request!({
                   method: 'GET',
-                  url: `https://aitable.ai/fusion/v1/datasheets/${datasheetId}/records`,
+                  url: `https://tbl.automatiser.com/fusion/v1/datasheets/${datasheetId}/records`,
                   qs,
                   headers: requestOptions.headers,
                   json: true,
@@ -455,7 +455,7 @@ export class Aitable implements INodeType {
 
               const response = await this.helpers.request!({
                 method: 'GET',
-                url: `https://aitable.ai/fusion/v1/datasheets/${datasheetId}/records`,
+                url: `https://tbl.automatiser.com/fusion/v1/datasheets/${datasheetId}/records`,
                 qs,
                 headers: requestOptions.headers,
                 json: true,
@@ -490,7 +490,7 @@ export class Aitable implements INodeType {
 
             const response = await this.helpers.request!({
               method: 'GET',
-              url: `https://aitable.ai/fusion/v1/datasheets/${datasheetId}/records`,
+              url: `https://tbl.automatiser.com/fusion/v1/datasheets/${datasheetId}/records`,
               qs,
               headers: requestOptions.headers,
               json: true,
