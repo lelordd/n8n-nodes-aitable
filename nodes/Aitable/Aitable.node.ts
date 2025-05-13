@@ -21,8 +21,8 @@ export class Aitable implements INodeType {
     defaults: {
       name: 'Aitable',
     },
-    inputs: ['main'],
-    outputs: ['main'],
+    inputs: [{type: 'main', index: 0}],
+    outputs: [{type: 'main', index: 0}],
     credentials: [
       {
         name: 'aitableApi',
