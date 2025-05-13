@@ -47,7 +47,7 @@ export async function aitableApiRequest(
     method,
     body,
     qs,
-    url: `https://aitable.ai/fusion/${apiVersion}${endpoint}`,
+    url: `https://tbl.automatiser.com/fusion/${apiVersion}${endpoint}`,
     headers: {
       Authorization: `Bearer ${credentials.apiToken}`,
       'Content-Type': 'application/json',
