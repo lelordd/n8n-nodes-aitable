@@ -1,5 +1,5 @@
 {
-	"node": "n8n-nodes-base.aitable",
+	"node": "aitable",
 	"nodeVersion": "1.1",
 	"codexVersion": "1.1",
 	"categories": ["Data & Storage"],
