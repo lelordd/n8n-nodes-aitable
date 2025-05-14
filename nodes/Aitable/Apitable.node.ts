@@ -14,7 +14,7 @@ import {
 export class Apitable implements INodeType {
   description: INodeTypeDescription = {
     displayName: 'Apitable',
-    name: 'apitable',
+    name: 'CUSTOM.apitable',
     icon: 'file:aitable-newlogo.png',
     group: ['transform'],
     version: 1,
