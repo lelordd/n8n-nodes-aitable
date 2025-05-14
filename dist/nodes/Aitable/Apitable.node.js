@@ -393,7 +393,7 @@ class Apitable {
                         if (returnAll) {
                             // Retrieve all records up to a maximum limit to prevent long response times
                             const maxRecords = 1000; // Set a maximum limit
-                            while (true) {
+                            while (allRecords.length < 1000) {
                                 qs.pageNum = pageNum;
                                 qs.pageSize = pageSize;
                                 const response = await this.helpers.request({

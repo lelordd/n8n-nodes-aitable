@@ -209,7 +209,7 @@ export class Apitable implements INodeType {
     loadOptions: {
       // Load Datasheets
       async getDatasheets(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
-        const response = await this.helpers.request!({
+        const response = await this.helpers.request({
           method: 'GET',
           url: 'https://tbl.automatiser.com/fusion/v1/spaces',
           headers: {
@@ -222,7 +222,7 @@ export class Apitable implements INodeType {
 
         if (response?.success && response.data?.spaces) {
           for (const space of response.data.spaces) {
-            const datasheetsResponse = await this.helpers.request!({
+            const datasheetsResponse = await this.helpers.request({
               method: 'GET',
               url: `https://tbl.automatiser.com/fusion/v2/spaces/${space.id}/nodes`,
               qs: { type: 'Datasheet' },
@@ -249,7 +249,7 @@ export class Apitable implements INodeType {
       async getFields(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
         const datasheetId = this.getNodeParameter('datasheetId') as string;
 
-        const response = await this.helpers.request!({
+        const response = await this.helpers.request({
           method: 'GET',
           url: `https://tbl.automatiser.com/fusion/v1/datasheets/${datasheetId}/fields`,
           headers: {
@@ -314,7 +314,7 @@ export class Apitable implements INodeType {
               ],
             };
 
-            const response = await this.helpers.request!({
+            const response = await this.helpers.request({
               method: 'POST',
               url: `https://tbl.automatiser.com/fusion/v1/datasheets/${datasheetId}/records`,
               body,
@@ -348,7 +348,7 @@ export class Apitable implements INodeType {
               ],
             };
 
-            const response = await this.helpers.request!({
+            const response = await this.helpers.request({
               method: 'PUT',
               url: `https://tbl.automatiser.com/fusion/v1/datasheets/${datasheetId}/records`,
               body,
@@ -369,7 +369,7 @@ export class Apitable implements INodeType {
               recordIds: recordId,
             };
 
-            const response = await this.helpers.request!({
+            const response = await this.helpers.request({
               method: 'DELETE',
               url: `https://tbl.automatiser.com/fusion/v1/datasheets/${datasheetId}/records`,
               qs,
@@ -390,7 +390,7 @@ export class Apitable implements INodeType {
               recordIds: recordId,
             };
 
-            const response = await this.helpers.request!({
+            const response = await this.helpers.request({
               method: 'GET',
               url: `https://tbl.automatiser.com/fusion/v1/datasheets/${datasheetId}/records`,
               qs,
@@ -413,18 +413,18 @@ export class Apitable implements INodeType {
               fieldKey: 'name',
             };
 
-            let allRecords: any[] = [];
+            let allRecords: IDataObject[] = [];
             let pageNum = 1;
             const pageSize = 100;
 
             if (returnAll) {
               // Retrieve all records up to a maximum limit to prevent long response times
               const maxRecords = 1000; // Set a maximum limit
-              while (true) {
+              while (allRecords.length < 1000) {
                 qs.pageNum = pageNum;
                 qs.pageSize = pageSize;
 
-                const response = await this.helpers.request!({
+                const response = await this.helpers.request({
                   method: 'GET',
                   url: `https://tbl.automatiser.com/fusion/v1/datasheets/${datasheetId}/records`,
                   qs,
@@ -454,7 +454,7 @@ export class Apitable implements INodeType {
               qs.pageNum = 1;
               qs.pageSize = limit;
 
-              const response = await this.helpers.request!({
+              const response = await this.helpers.request({
                 method: 'GET',
                 url: `https://tbl.automatiser.com/fusion/v1/datasheets/${datasheetId}/records`,
                 qs,
@@ -489,7 +489,7 @@ export class Apitable implements INodeType {
               qs.filterByFormula = filters.join(' AND ');
             }
 
-            const response = await this.helpers.request!({
+            const response = await this.helpers.request({
               method: 'GET',
               url: `https://tbl.automatiser.com/fusion/v1/datasheets/${datasheetId}/records`,
               qs,

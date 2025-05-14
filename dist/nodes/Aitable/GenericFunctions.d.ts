@@ -3,7 +3,7 @@ export interface IApitableApiResponse {
     success: boolean;
     message?: string;
     data?: {
-        [key: string]: any;
+        [key: string]: unknown;
         spaces?: Array<{
             id: string;
             name: string;
@@ -16,7 +16,7 @@ export interface IApitableApiResponse {
             id: string;
             name: string;
         }>;
-        records?: Array<any>;
+        records?: Array<unknown>;
     };
 }
 export declare function apitableApiRequest(this: IHookFunctions | IExecuteFunctions | ILoadOptionsFunctions, method: IHttpRequestMethods, endpoint: string, body?: IDataObject, qs?: IDataObject, apiVersion?: string): Promise<IApitableApiResponse>;

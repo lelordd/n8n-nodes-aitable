@@ -11,7 +11,7 @@ export interface IApitableApiResponse {
   success: boolean;
   message?: string;
   data?: {
-    [key: string]: any;
+    [key: string]: unknown;
     spaces?: Array<{
       id: string;
       name: string;
@@ -24,7 +24,7 @@ export interface IApitableApiResponse {
       id: string;
       name: string;
     }>;
-    records?: Array<any>;
+    records?: Array<unknown>;
     // Add other properties as needed
   };
 }
@@ -65,14 +65,15 @@ export async function apitableApiRequest(
   }
 
   try {
-    const response = (await this.helpers.httpRequest!(options)) as IApitableApiResponse;
+    const response = await this.helpers.httpRequest(options) as IApitableApiResponse;
 
     if (!response.success) {
       throw new Error(`Aitable API Error: ${response.message}`);
     }
 
     return response;
-  } catch (error: any) {
-    throw new Error(`Aitable Error: ${error.message || 'Unknown error occurred'}`);
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    throw new Error(`Aitable Error: ${errorMessage}`);
   }
 }

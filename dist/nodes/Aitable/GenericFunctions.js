@@ -25,14 +25,15 @@ async function apitableApiRequest(method, endpoint, body = {}, qs = {}, apiVersi
         delete options.qs;
     }
     try {
-        const response = (await this.helpers.httpRequest(options));
+        const response = await this.helpers.httpRequest(options);
         if (!response.success) {
             throw new Error(`Aitable API Error: ${response.message}`);
         }
         return response;
     }
     catch (error) {
-        throw new Error(`Aitable Error: ${error.message || 'Unknown error occurred'}`);
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+        throw new Error(`Aitable Error: ${errorMessage}`);
     }
 }
 exports.apitableApiRequest = apitableApiRequest;
