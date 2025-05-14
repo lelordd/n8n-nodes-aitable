@@ -4,9 +4,10 @@ import {
   ILoadOptionsFunctions,
   INodeExecutionData,
   INodeType,
-  INodeTypeDescription,  
+  INodeTypeDescription,
   IDataObject,
   INodePropertyOptions,
+  NodeConnectionType,
 } from 'n8n-workflow';
 
 // Node implementation
@@ -21,8 +22,8 @@ export class Aitable implements INodeType {
     defaults: {
       name: 'Aitable',
     },
-    inputs: ['main'],
-    outputs: ['main'],
+    inputs: [NodeConnectionType.Main],
+    outputs: [NodeConnectionType.Main],
     credentials: [
       {
         name: 'aitableApi',

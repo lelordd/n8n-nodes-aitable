@@ -14,8 +14,8 @@ class Aitable {
             defaults: {
                 name: 'Aitable',
             },
-            inputs: ['main'],
-            outputs: ['main'],
+            inputs: ["main" /* NodeConnectionType.Main */],
+            outputs: ["main" /* NodeConnectionType.Main */],
             credentials: [
                 {
                     name: 'aitableApi',
