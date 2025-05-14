@@ -1,5 +1,5 @@
 import { ICredentialType, INodeProperties } from 'n8n-workflow';
-export declare class AitableApi implements ICredentialType {
+export declare class ApitableApi implements ICredentialType {
     name: string;
     displayName: string;
     documentationUrl: string;

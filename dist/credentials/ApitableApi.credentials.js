@@ -1,9 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.AitableApi = void 0;
-class AitableApi {
+exports.ApitableApi = void 0;
+class ApitableApi {
     constructor() {
-        this.name = 'aitableApi';
+        this.name = 'apitableApi';
         this.displayName = 'Aitable API';
         this.documentationUrl = 'https://developers.aitable.ai/api/quick-start';
         this.properties = [
@@ -17,5 +17,5 @@ class AitableApi {
         ];
     }
 }
-exports.AitableApi = AitableApi;
+exports.ApitableApi = ApitableApi;
 //# sourceMappingURL=ApitableApi.credentials.js.map
