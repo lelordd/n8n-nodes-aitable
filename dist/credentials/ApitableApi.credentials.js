@@ -18,4 +18,4 @@ class AitableApi {
     }
 }
 exports.AitableApi = AitableApi;
-//# sourceMappingURL=AitableApi.credentials.js.map
+//# sourceMappingURL=ApitableApi.credentials.js.map
