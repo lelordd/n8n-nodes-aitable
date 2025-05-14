@@ -7,7 +7,7 @@ import {
   IHttpRequestMethods,
 } from 'n8n-workflow';
 
-export interface IAitableApiResponse {
+export interface IApitableApiResponse {
   success: boolean;
   message?: string;
   data?: {
@@ -29,15 +29,15 @@ export interface IAitableApiResponse {
   };
 }
 
-export async function aitableApiRequest(
+export async function apitableApiRequest(
   this: IHookFunctions | IExecuteFunctions | ILoadOptionsFunctions,
   method: IHttpRequestMethods,
   endpoint: string,
   body: IDataObject = {},
   qs: IDataObject = {},
   apiVersion = 'v1',
-): Promise<IAitableApiResponse> {
-  const credentials = await this.getCredentials('aitableApi');
+): Promise<IApitableApiResponse> {
+  const credentials = await this.getCredentials('apitableApi');
 
   if (!credentials?.apiToken) {
     throw new Error('No API token provided');
@@ -65,7 +65,7 @@ export async function aitableApiRequest(
   }
 
   try {
-    const response = (await this.helpers.httpRequest!(options)) as IAitableApiResponse;
+    const response = (await this.helpers.httpRequest!(options)) as IApitableApiResponse;
 
     if (!response.success) {
       throw new Error(`Aitable API Error: ${response.message}`);

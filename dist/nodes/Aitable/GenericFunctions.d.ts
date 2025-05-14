@@ -1,5 +1,5 @@
 import { IExecuteFunctions, IHookFunctions, ILoadOptionsFunctions, IDataObject, IHttpRequestMethods } from 'n8n-workflow';
-export interface IAitableApiResponse {
+export interface IApitableApiResponse {
     success: boolean;
     message?: string;
     data?: {
@@ -19,4 +19,4 @@ export interface IAitableApiResponse {
         records?: Array<any>;
     };
 }
-export declare function aitableApiRequest(this: IHookFunctions | IExecuteFunctions | ILoadOptionsFunctions, method: IHttpRequestMethods, endpoint: string, body?: IDataObject, qs?: IDataObject, apiVersion?: string): Promise<IAitableApiResponse>;
+export declare function apitableApiRequest(this: IHookFunctions | IExecuteFunctions | ILoadOptionsFunctions, method: IHttpRequestMethods, endpoint: string, body?: IDataObject, qs?: IDataObject, apiVersion?: string): Promise<IApitableApiResponse>;

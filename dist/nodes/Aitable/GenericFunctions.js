@@ -1,8 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.aitableApiRequest = void 0;
-async function aitableApiRequest(method, endpoint, body = {}, qs = {}, apiVersion = 'v1') {
-    const credentials = await this.getCredentials('aitableApi');
+exports.apitableApiRequest = void 0;
+async function apitableApiRequest(method, endpoint, body = {}, qs = {}, apiVersion = 'v1') {
+    const credentials = await this.getCredentials('apitableApi');
     if (!(credentials === null || credentials === void 0 ? void 0 : credentials.apiToken)) {
         throw new Error('No API token provided');
     }
@@ -35,5 +35,5 @@ async function aitableApiRequest(method, endpoint, body = {}, qs = {}, apiVersio
         throw new Error(`Aitable Error: ${error.message || 'Unknown error occurred'}`);
     }
 }
-exports.aitableApiRequest = aitableApiRequest;
+exports.apitableApiRequest = apitableApiRequest;
 //# sourceMappingURL=GenericFunctions.js.map

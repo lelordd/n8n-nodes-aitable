@@ -11,22 +11,22 @@ import {
 } from 'n8n-workflow';
 
 // Node implementation
-export class Aitable implements INodeType {
+export class Apitable implements INodeType {
   description: INodeTypeDescription = {
     displayName: 'Apitable',
     name: 'apitable',
     icon: 'file:aitable-newlogo.png',
     group: ['transform'],
     version: 1,
-    description: 'Interact with the Aitable API',
+    description: 'Interact with the Apitable API',
     defaults: {
-      name: 'Aitable',
+      name: 'Apitable',
     },
     inputs: [NodeConnectionType.Main],
     outputs: [NodeConnectionType.Main],
     credentials: [
       {
-        name: 'aitableApi',
+        name: 'apitableApi',
         required: true,
       },
     ],
@@ -213,7 +213,7 @@ export class Aitable implements INodeType {
           method: 'GET',
           url: 'https://tbl.automatiser.com/fusion/v1/spaces',
           headers: {
-            Authorization: `Bearer ${(await this.getCredentials('aitableApi')).apiToken}`,
+            Authorization: `Bearer ${(await this.getCredentials('apitableApi')).apiToken}`,
           },
           json: true,
         });
@@ -227,7 +227,7 @@ export class Aitable implements INodeType {
               url: `https://tbl.automatiser.com/fusion/v2/spaces/${space.id}/nodes`,
               qs: { type: 'Datasheet' },
               headers: {
-                Authorization: `Bearer ${(await this.getCredentials('aitableApi')).apiToken}`,
+                Authorization: `Bearer ${(await this.getCredentials('apitableApi')).apiToken}`,
               },
               json: true,
             });
@@ -253,7 +253,7 @@ export class Aitable implements INodeType {
           method: 'GET',
           url: `https://tbl.automatiser.com/fusion/v1/datasheets/${datasheetId}/fields`,
           headers: {
-            Authorization: `Bearer ${(await this.getCredentials('aitableApi')).apiToken}`,
+            Authorization: `Bearer ${(await this.getCredentials('apitableApi')).apiToken}`,
           },
           json: true,
         });
@@ -277,7 +277,7 @@ export class Aitable implements INodeType {
   async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
     const items = this.getInputData();
     const returnData: INodeExecutionData[] = [];
-    const credentials = await this.getCredentials('aitableApi');
+    const credentials = await this.getCredentials('apitableApi');
 
     for (let i = 0; i < items.length; i++) {
       try {
@@ -325,7 +325,7 @@ export class Aitable implements INodeType {
             if (response?.success && response.data?.records) {
               returnData.push({ json: response.data.records[0] });
             } else {
-              throw new Error(`Aitable API Error: ${response?.message || 'Unknown error'}`);
+              throw new Error(`Apitable API Error: ${response?.message || 'Unknown error'}`);
             }
           } else if (operation === 'update') {
             // Update a record
@@ -359,7 +359,7 @@ export class Aitable implements INodeType {
             if (response?.success && response.data?.records) {
               returnData.push({ json: response.data.records[0] });
             } else {
-              throw new Error(`Aitable API Error: ${response?.message || 'Unknown error'}`);
+              throw new Error(`Apitable API Error: ${response?.message || 'Unknown error'}`);
             }
           } else if (operation === 'delete') {
             // Delete a record
@@ -380,7 +380,7 @@ export class Aitable implements INodeType {
             if (response?.success) {
               returnData.push({ json: { success: true, message: 'Record deleted successfully' } });
             } else {
-              throw new Error(`Aitable API Error: ${response?.message || 'Unknown error'}`);
+              throw new Error(`Apitable API Error: ${response?.message || 'Unknown error'}`);
             }
           } else if (operation === 'get') {
             // Get a record
@@ -401,7 +401,7 @@ export class Aitable implements INodeType {
             if (response?.success && response.data?.records?.length > 0) {
               returnData.push({ json: response.data.records[0] });
             } else {
-              throw new Error(`Aitable API Error: ${response?.message || 'Unknown error'}`);
+              throw new Error(`Apitable API Error: ${response?.message || 'Unknown error'}`);
             }
           } else if (operation === 'getAll') {
             // Get all records
@@ -441,7 +441,7 @@ export class Aitable implements INodeType {
                     pageNum++;
                   }
                 } else {
-                  throw new Error(`Aitable API Error: ${response?.message || 'Unknown error'}`);
+                  throw new Error(`Apitable API Error: ${response?.message || 'Unknown error'}`);
                 }
               }
 
@@ -465,7 +465,7 @@ export class Aitable implements INodeType {
               if (response?.success && response.data?.records) {
                 allRecords = response.data.records;
               } else {
-                throw new Error(`Aitable API Error: ${response?.message || 'Unknown error'}`);
+                throw new Error(`Apitable API Error: ${response?.message || 'Unknown error'}`);
               }
             }
 
@@ -502,23 +502,16 @@ export class Aitable implements INodeType {
                 returnData.push({ json: record });
               }
             } else {
-              // No records found, return the specified JSON
-              const fieldName = fieldValues[0]?.field;
-              const fieldValue = fieldValues[0]?.value;
-              const result = {
-                recordId: "can't find",
-                [`${fieldName}`]: `can't find ${fieldValue}`,
-              };
-              returnData.push({ json: result });
+              throw new Error(`Apitable API Error: ${response?.message || 'Unknown error'}`);
             }
           }
         }
-      } catch (error: any) {
+      } catch (error) {
         if (this.continueOnFail()) {
-          returnData.push({ json: { error: error.message } });
-          continue;
+          returnData.push({ json: { error: error instanceof Error ? error.message : 'Unknown error' } });
+        } else {
+          throw error;
         }
-        throw error;
       }
     }
 

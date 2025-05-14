@@ -1,1 +1,1 @@
-# n8n-nodes-aitable-published
+# n8n-nodes-apitable-published
