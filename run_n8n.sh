@@ -1,31 +1,31 @@
 #!/bin/bash
-
-# Chuyển đến thư mục custom của n8n
-cd ~/.n8n/custom || { echo "Không thể vào thư mục ~/.n8n/custom"; exit 1; }
-
-# Ngắt liên kết gói n8n-nodes-aitable
+ 
+# Aller dans le dossier custom de n8n
+cd ~/.n8n/custom || { echo "Impossible d'accéder au dossier ~/.n8n/custom"; exit 1; }
+ 
+# Désinstaller le lien du package n8n-nodes-aitable
 npm unlink n8n-nodes-aitable
-
-# Chuyển đến thư mục n8n-nodes-aitable
-cd ~/n8n-nodes-aitable || { echo "Không thể vào thư mục ~/n8n-nodes-aitable"; exit 1; }
-
-# Xóa các thư mục và file không cần thiết
+ 
+# Aller dans le dossier n8n-nodes-aitable
+cd ~/n8n-nodes-aitable || { echo "Impossible d'accéder au dossier ~/n8n-nodes-aitable"; exit 1; }
+ 
+# Supprimer les dossiers et fichiers inutiles
 rm -rf dist node_modules package-lock.json
-
-# Cài đặt lại các gói
+ 
+# Réinstaller les packages
 npm install
-
-# Biên dịch lại gói
+ 
+# Recompiler le paquet
 npm run build
-
-# Liên kết gói
+ 
+# Lier le paquet
 npm link
-
-# Quay lại thư mục custom của n8n
-cd ~/.n8n/custom || { echo "Không thể vào thư mục ~/.n8n/custom"; exit 1; }
-
-# Liên kết gói n8n-nodes-aitable
+ 
+# Retourner dans le dossier custom de n8n
+cd ~/.n8n/custom || { echo "Impossible d'accéder au dossier ~/.n8n/custom"; exit 1; }
+ 
+# Lier le paquet n8n-nodes-aitable
 npm link n8n-nodes-aitable
-
-# Khởi động n8n
+ 
+# Démarrer n8n
 # n8n start
