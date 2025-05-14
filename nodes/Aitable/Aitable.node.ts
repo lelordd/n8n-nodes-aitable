@@ -13,8 +13,8 @@ import {
 // Node implementation
 export class Aitable implements INodeType {
   description: INodeTypeDescription = {
-    displayName: 'Aitable',
-    name: 'aitable',
+    displayName: 'Apitable',
+    name: 'apitable',
     icon: 'file:aitable-newlogo.png',
     group: ['transform'],
     version: 1,
