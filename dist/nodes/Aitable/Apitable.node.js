@@ -6,7 +6,7 @@ class Apitable {
     constructor() {
         this.description = {
             displayName: 'Apitable',
-            name: 'CUSTOM.apitable',
+            name: 'apitable',
             icon: 'file:aitable-newlogo.png',
             group: ['transform'],
             version: 1,
